@@ -1,68 +1,42 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import axios from 'axios';
+
+import { fetchStudents } from '../store';
 
 import StudentList from './StudentList.js';
 import SingleStudent from './SingleStudent.js';
 import NewStudentForm from './NewStudentForm.js';
 
-export default class Main extends Component {
+class Main extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      students: [],
-      selectedStudent: {},
       showStudent: false,
     };
 
-    this.selectStudent = this.selectStudent.bind(this);
     this.handleClick = this.handleClick.bind(this);
-    this.addStudent = this.addStudent.bind(this);
   }
 
   componentDidMount() {
-    this.getStudents();
-  }
-
-  async getStudents() {
-    console.log('fetching');
-    try {
-      const { data } = await axios.get('/student');
-      this.setState({ students: data });
-      console.log('THis is the State', this.state);
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  selectStudent(student) {
-    return this.setState({
-      selectedStudent: student,
-    });
-  }
-
-  async addStudent(student) {
-    const { data } = await axios.post('/student', student);
-    this.setState({
-      students: [...this.state.students, data],
-      showStudent: false,
-    });
+    this.props.fetchStudents();
   }
 
   handleClick(e) {
-    return this.setState({
-      showStudent: !this.state.showStudent,
-    });
+    return this.setState(prevState => ({
+      showStudent: !prevState.showStudent,
+    }));
   }
 
   render() {
-    console.log('this is the state in main', this.state);
+    const { selectedStudent } = this.props;
     return (
       <div>
         <h1>Students</h1>
-        <button onClick={this.handleClick}>Add Student</button>
-        {this.state.showStudent ? (
-          <NewStudentForm addStudent={this.addStudent} />
-        ) : null}
+        <button type="button" onClick={this.handleClick}>
+          Add Student
+        </button>
+        {this.state.showStudent ? <NewStudentForm /> : null}
         <table>
           <thead>
             <tr>
@@ -70,15 +44,21 @@ export default class Main extends Component {
               <th>Tests</th>
             </tr>
           </thead>
-          <StudentList
-            students={this.state.students}
-            selectStudent={this.selectStudent}
-          />
+          <StudentList />
         </table>
-        {this.state.selectedStudent.id ? (
-          <SingleStudent student={this.state.selectedStudent} />
-        ) : null}
+        {selectedStudent.id ? <SingleStudent /> : null}
       </div>
     );
   }
 }
+
+const mapStateToProps = ({ selectedStudent }) => ({ selectedStudent });
+
+const mapDispatchToProps = dispatch => ({
+  fetchStudents: () => dispatch(fetchStudents()),
+});
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(Main);
